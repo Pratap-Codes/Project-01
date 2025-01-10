@@ -8,13 +8,17 @@ const PORT = 8005;
 //Middleware - plugins
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
+app.use((req, res, next) => {
+  fs.appendFile('log.txt', `${Date.now()}: ${req.method}: ${req.path}\n`, (err, data) => {
+  next();
+  })
+});
 
 //Routes
 //To list all the users
 app.get("/api/users", (req, res) => {
     return res.json(users);
 });
-
 
 app
 .route("/api/users/:id")
