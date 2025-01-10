@@ -1,12 +1,11 @@
 const express = require('express');
 let users = require('./MOCK_DATA.json');
 const fs = require("fs");
-// let users = require('./MOCK_DATA.json');
 
 const app = express();
 const PORT = 8005;
 
-//Middleware
+//Middleware - plugins
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
@@ -16,8 +15,10 @@ app.get("/api/users", (req, res) => {
     return res.json(users);
 });
 
+
 app
 .route("/api/users/:id")
+// TO get the users with their id
 .get((req, res) => {
     const id = Number(req.params.id);
     const user = users.find((user) => user.id === id);
@@ -27,6 +28,7 @@ app
         return res.status(404).json({message: "User not found"});
     }
 })
+// TO update users with their id
 .patch((req, res) => {
     const id = Number(req.params.id);
     const user = users.findIndex((user) => user.id === id);
@@ -44,7 +46,7 @@ app
       return res.json({status: "success", user:updatedUser});
     });
 })
-
+//To delete the users with their id
 .delete((req, res) => {
    const id = Number(req.params.id);
    const user = users.findIndex((user) => user.id === id);
@@ -64,6 +66,7 @@ app
   });
 });
 
+//To send or mutate some data
 app.post("/api/users", (req, res) => {
     const body = req.body;
     users.push({...body, id: users.length + 1});
@@ -71,7 +74,5 @@ app.post("/api/users", (req, res) => {
     return res.json({status: "success", id: users.length});
     });
 });
-
-
 
 app.listen(PORT, () => console.log("Server has started"));
