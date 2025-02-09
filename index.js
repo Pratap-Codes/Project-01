@@ -1,82 +1,21 @@
 const express = require('express');
-let users = require('./MOCK_DATA.json');
+const mongoose = require('mongoose');
 const fs = require("fs");
+
+const {logReqRes} = require('./middlewares');
+const {connectMongoDb} = require('./connection');
+const userRouter = require('./routes/user');
 
 const app = express();
 const PORT = 8005;
 
-//Middleware - plugins
-app.use(express.urlencoded({extended: false}));
-app.use(express.json());
-app.use((req, res, next) => {
-  fs.appendFile('log.txt', `${Date.now()}: ${req.method}: ${req.path}\n`, (err, data) => {
-  next();
-  })
-});
+connectMongoDb('mongodb://127.0.0.1:27017/project-01').then( () => {
+  console.log("MongoDb connected!")
+}
+);
 
-//Routes
-//To list all the users
-app.get("/api/users", (req, res) => {
-    return res.json(users);
-});
+app.use(logReqRes('log.txt'));
 
-app
-.route("/api/users/:id")
-// TO get the users with their id
-.get((req, res) => {
-    const id = Number(req.params.id);
-    const user = users.find((user) => user.id === id);
-    if(user){
-        return res.json(user);
-    } else{
-        return res.status(404).json({message: "User not found"});
-    }
-})
-// TO update users with their id
-.patch((req, res) => {
-    const id = Number(req.params.id);
-    const user = users.findIndex((user) => user.id === id);
-
-    if (user === -1){
-        return res.status(404).json({message: "User not found"});
-    }
-    const updatedUser = {...users[user], ...req.body};
-
-    users[user] = updatedUser;
-    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users, null, 2), (err) => {
-      if(err){ 
-        return res.status(500).json({status: "error", message:"Failed to save data"})
-      }
-      return res.json({status: "success", user:updatedUser});
-    });
-})
-//To delete the users with their id
-.delete((req, res) => {
-   const id = Number(req.params.id);
-   const user = users.findIndex((user) => user.id === id);
-
-   if(user === -1){
-    return res.status(505), json({message: "User not found"})
-   }
-
-   const deleteUser = users[user];
-   users = users.filter((user) => user.id !== id);
-
-   fs.writeFile("./MOCK_DATA.json", JSON.stringify(users, null, 2), (err) => {
-    if(err){ 
-      return res.json({status: "error", message:"Failed to delete data"});
-    }
-    return res.json({status: "success", user:deleteUser});
-  });
-});
-
-//To send or mutate some data
-app.post("/api/users", (req, res) => {
-    const body = req.body;
-    users.push({...body, id: users.length + 1});
-    fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-    return res.json({status: "success", id: users.length});
-    });
-});
+app.use("/api/users", userRouter);
 
 app.listen(PORT, () => console.log("Server has started"));
